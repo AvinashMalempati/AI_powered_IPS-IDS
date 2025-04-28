@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Intrusion Detection System</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Real-Time Intrusion Detection System</h1>
+
+        <!-- Network Selection and Capture Controls -->
+        <div class="card">
+            <h2>Select Network Interface</h2>
+            <label for="networks">Network Interface:</label>
+            <select id="networks"></select>
+            <button class="btn" onclick="startCapture()">Start Capture</button>
+            <button class="btn btn-stop" onclick="stopCapture()">Stop Capture</button>
+        </div>
+
+        <!-- Feature Table Container -->
+        <div class="card">
+            <h2>📄 Packet Analysis</h2>
+            <!-- Add search field for filtering features -->
+            <input
+                    type="text"
+                    id="featureSearch"
+                    placeholder="Search by source IP, destination IP, port, protocol, or details"
+                    class="search-box"
+                    onkeyup="filterFeatures()"
+            />
+            <div id="featureContainer" class="scrollable-container">
+                <!-- Feature table will be added here dynamically -->
+             </div>
+        </div>
+
+        <!-- Dashboard Stats -->
+        <div class="card stats">
+            <h2>📊 Statistics</h2>
+            <p>Total Packets: <span id="totalPackets">0</span></p>
+            <p>Total Attacks: <span id="totalAttacks">0</span></p>
+        </div>
+
+        <!-- Alerts -->
+        <div class="card" id="alertSection">
+            <h2>🚨 Intrusion Alerts</h2>
+            <ul id="alertList"></ul>
+        </div>
+    </div>
+
+
+</body>
+</html>
