@@ -285,11 +285,12 @@ def get_packets():
 
 
 if __name__ == "__main__":
-    # Fix: Set child watcher for subprocess support
-    if asyncio.get_event_loop().is_running():
-        raise RuntimeError("This script must be executed in a standalone Python process.")
-
-    asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
-    asyncio.get_child_watcher().attach_loop(asyncio.new_event_loop())
+    # Fix for Windows: Use WindowsSelectorEventLoopPolicy
+    if os.name == "nt":  # Detect Windows platform
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    else:  # For non-Windows systems
+        if not asyncio.get_event_loop().is_running():
+            asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+            asyncio.get_child_watcher().attach_loop(asyncio.new_event_loop())
 
     app.run(host='0.0.0.0', port=8080, debug=True)
