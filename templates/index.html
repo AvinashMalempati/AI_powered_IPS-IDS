@@ -7,51 +7,113 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <h1>🔐 Real-Time Intrusion Detection System</h1>
+        <header>
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i>
+                <h1>Intrusion Detection System</h1>
+            </div>
+            <p class="subtitle">Real-time network monitoring and threat detection</p>
+        </header>
 
-        <!-- Network Selection and Capture Controls -->
-        <div class="card">
-            <h2>Select Network Interface</h2>
-            <label for="networks">Network Interface:</label>
-            <select id="networks"></select>
-            <button class="btn" onclick="startCapture()">Start Capture</button>
-            <button class="btn btn-stop" onclick="stopCapture()">Stop Capture</button>
+        <div class="dashboard">
+            <!-- Network Selection and Capture Controls -->
+            <div class="card network-card">
+                <div class="card-header">
+                    <i class="fas fa-network-wired"></i>
+                    <h2>Network Configuration</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="networks">Network Interface:</label>
+                        <div class="select-wrapper">
+                            <select id="networks" class="form-control"></select>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" id="startButton" onclick="startCapture()">
+                            <i class="fas fa-play"></i> Start Capture
+                        </button>
+                        <button class="btn btn-danger btn-stop" id="stopButton" onclick="stopCapture()">
+                            <i class="fas fa-stop"></i> Stop Capture
+                        </button>
+                    </div>
+
+                    <div class="upload-section">
+                        <h3><i class="fas fa-file-upload"></i> Upload PCAP File</h3>
+                        <div class="file-upload">
+                            <input type="file" id="pcapFileInput" accept=".pcap,.pcapng" />
+                            <label for="pcapFileInput" class="file-label">
+                                <i class="fas fa-file-alt"></i>
+                                <span>Choose file</span>
+                            </label>
+                            <button class="btn btn-success btn-upload" onclick="uploadPcapFile()">
+                                <i class="fas fa-search"></i> Analyze PCAP
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats and Alerts Container -->
+            <div class="stats-alerts-container">
+                <!-- Total Attacks Card -->
+                <div class="stat-card alert-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>Total Attacks</h3>
+                        <p id="totalAttacks">0</p>
+                    </div>
+                </div>
+
+                <!-- Alerts Card - Now moved to be side-by-side with stats -->
+                <div class="card alert-box">
+                    <div class="card-header">
+                        <i class="fas fa-bell"></i>
+                        <h2>Intrusion Alerts</h2>
+                    </div>
+                    <div class="card-body">
+                        <ul id="alertList" class="alert-list scrollable-alerts">
+                            <!-- Alerts will be added here dynamically -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature Table Container -->
+            <div class="card feature-card">
+                <div class="card-header">
+                    <i class="fas fa-table"></i>
+                    <h2>Packet Analysis</h2>
+                </div>
+                <div class="card-body">
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input
+                            type="text"
+                            id="featureSearch"
+                            placeholder="Search by source IP, destination IP, port, protocol, or details"
+                            class="search-box"
+                            onkeyup="filterFeatures()"
+                        />
+                    </div>
+                    <div id="featureContainer" class="scrollable-container">
+                        <!-- Feature table will be added here dynamically -->
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Feature Table Container -->
-        <div class="card">
-            <h2>📄 Packet Analysis</h2>
-            <!-- Add search field for filtering features -->
-            <input
-                    type="text"
-                    id="featureSearch"
-                    placeholder="Search by source IP, destination IP, port, protocol, or details"
-                    class="search-box"
-                    onkeyup="filterFeatures()"
-            />
-            <div id="featureContainer" class="scrollable-container">
-                <!-- Feature table will be added here dynamically -->
-             </div>
-        </div>
-
-        <!-- Dashboard Stats -->
-        <div class="card stats">
-            <h2>📊 Statistics</h2>
-            <p>Total Packets: <span id="totalPackets">0</span></p>
-            <p>Total Attacks: <span id="totalAttacks">0</span></p>
-        </div>
-
-        <!-- Alerts -->
-        <div class="card" id="alertSection">
-            <h2>🚨 Intrusion Alerts</h2>
-            <ul id="alertList"></ul>
-        </div>
+        <footer>
+            <p>&copy; 2025 Intrusion Detection System | <a href="#">Documentation</a> | <a href="#">Support</a></p>
+        </footer>
     </div>
-
-
 </body>
 </html>

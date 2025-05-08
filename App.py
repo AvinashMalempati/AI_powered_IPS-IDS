@@ -284,13 +284,71 @@ def get_packets():
         }), 500
 
 
+@app.route('/analyze_pcap', methods=['POST'])
+def analyze_pcap():
+    """
+    Analyze a PCAP file for network traffic and predict attack types.
+    """
+    try:
+        # Check if a file was uploaded
+        if 'pcap_file' not in request.files:
+            return jsonify({"error": "No file uploaded. Please upload a .pcap file."}), 400
+
+        pcap_file = request.files['pcap_file']
+
+        # Save uploaded file to a temporary location
+        temp_path = os.path.join("temp", pcap_file.filename)
+        os.makedirs("temp", exist_ok=True)
+        pcap_file.save(temp_path)
+
+        # Extract features using the function from extract_features
+        extracted_features = pd.DataFrame(extract_pcap_features(temp_path))
+
+        if extracted_features is None or extracted_features.empty:
+            return jsonify({"error": "No valid features extracted from the PCAP file."}), 500
+
+        # Preprocess the features (excluding unnecessary columns)
+        model_data = extracted_features.drop(['src_ip', 'dst_ip', 'protocol'], axis=1, errors='ignore')
+        processed_data = preprocess_data(model_data)
+
+        if processed_data is None:
+            return jsonify({"error": "Error encountered during preprocessing."}), 500
+
+        # Perform predictions using the models
+        rf_predictions = list(map(int, rf_model.predict(processed_data)))
+        nn_probabilities = nn_model.predict(processed_data)
+        nn_predictions = list(map(int, np.argmax(nn_probabilities, axis=1)))
+
+        # Combine predictions and prepare the response
+        predictions = []
+        for i in range(len(extracted_features)):
+            # Determine final prediction
+            final_pred = nn_predictions[i] if rf_predictions[i] != nn_predictions[i] else rf_predictions[i]
+            attack_type = ATTACK_TYPES.get(final_pred, "Unknown")
+
+            # Include relevant details for each prediction
+            predictions.append({
+                "flow_duration": float(extracted_features.iloc[i].get('Flow Duration', 0)),
+                "source": extracted_features.iloc[i].get('src_ip', 'Unknown'),
+                "destination": extracted_features.iloc[i].get('dst_ip', 'Unknown'),
+                "destination_port": int(extracted_features.iloc[i].get('Destination Port', 0)),
+                "protocol": extracted_features.iloc[i].get('protocol', 'Unknown'),
+                "prediction": attack_type,
+                "features": extracted_features.iloc[i].to_dict()  # Include original features
+            })
+
+        # Return predictions as JSON
+        return jsonify({"predictions": predictions})
+    except Exception as e:
+        print(f"Error analyzing PCAP file: {e}")
+        return jsonify({"error": str(e), "message": "An error occurred during PCAP analysis."}), 500
+
 if __name__ == "__main__":
-    # Fix for Windows: Use WindowsSelectorEventLoopPolicy
-    if os.name == "nt":  # Detect Windows platform
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    else:  # For non-Windows systems
-        if not asyncio.get_event_loop().is_running():
-            asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
-            asyncio.get_child_watcher().attach_loop(asyncio.new_event_loop())
+    # Fix: Set child watcher for subprocess support
+    if asyncio.get_event_loop().is_running():
+        raise RuntimeError("This script must be executed in a standalone Python process.")
+
+    asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+    asyncio.get_child_watcher().attach_loop(asyncio.new_event_loop())
 
     app.run(host='0.0.0.0', port=8080, debug=True)
