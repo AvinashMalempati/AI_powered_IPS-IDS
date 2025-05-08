@@ -26,6 +26,18 @@ async function fetchNetworks() {
     }
 }
 
+// Reset display data and counters
+function resetDisplayData() {
+    document.getElementById("alertList").innerHTML = "";
+    document.getElementById("totalAttacks").textContent = "0";
+
+    // Initialize the feature container as a table
+    initializeFeatureTable();
+
+    totalPackets = 0;
+    totalAttacks = 0;
+}
+
 // Start capturing packets
 async function startCapture() {
     const networkInterface = document.getElementById("networks").value;
@@ -36,8 +48,8 @@ async function startCapture() {
 
     capturing = true;
     try {
-        const startButton = document.querySelector(".btn");
-        const stopButton = document.querySelector(".btn-stop");
+        const startButton = document.getElementById("startButton");
+        const stopButton = document.getElementById("stopButton");
 
         // Disable the start button and enable the stop button
         startButton.disabled = true;
@@ -48,16 +60,7 @@ async function startCapture() {
         const response = await axios.post('/start_capture', { interface: networkInterface });
         alert(response.data.status);
 
-        // Clear existing data
-        document.getElementById("alertList").innerHTML = "";
-        document.getElementById("totalPackets").textContent = "0";
-        document.getElementById("totalAttacks").textContent = "0";
-
-        // Initialize the feature container as a table
-        initializeFeatureTable();
-
-        totalPackets = 0;
-        totalAttacks = 0;
+        resetDisplayData();
 
         // Start polling for new packet data every 3 seconds (adjusted from 30 seconds for better responsiveness)
         fetchPackets(); // Initial fetch
@@ -78,8 +81,8 @@ async function stopCapture() {
     }
 
     try {
-        const startButton = document.querySelector(".btn");
-        const stopButton = document.querySelector(".btn-stop");
+        const startButton = document.getElementById("startButton");
+        const stopButton = document.getElementById("stopButton");
 
         // Disable the stop button and enable the start button
         stopButton.disabled = true;
@@ -116,6 +119,120 @@ function initializeFeatureTable() {
             </tbody>
         </table>
     `;
+}
+
+// Upload and analyze PCAP file
+async function uploadPcapFile() {
+    const fileInput = document.getElementById("pcapFileInput");
+
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alert("Please select a PCAP file to analyze.");
+        return;
+    }
+
+    const file = fileInput.files[0];
+    if (!file.name.endsWith('.pcap') && !file.name.endsWith('.pcapng')) {
+        alert("Please select a valid PCAP file (.pcap or .pcapng).");
+        return;
+    }
+
+    // Disable buttons during analysis
+    const startButton = document.getElementById("startButton");
+    const uploadButton = document.querySelector(".btn-upload");
+    startButton.disabled = true;
+    startButton.classList.add("disabled");
+    uploadButton.disabled = true;
+    uploadButton.classList.add("disabled");
+
+    try {
+        // Create FormData object to send the file
+        const formData = new FormData();
+        formData.append('pcap_file', file);
+
+        // Display loading message
+        alert("Analyzing PCAP file. This may take a moment...");
+
+        // Clear existing data
+        resetDisplayData();
+
+        // Send the file to the server for analysis
+        const response = await axios.post('/analyze_pcap', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
+        // Process the analysis results
+        displayAnalysisResults(response.data.predictions);
+
+    } catch (error) {
+        console.error("Error analyzing PCAP file: ", error);
+        alert("Failed to analyze PCAP: " + (error.response?.data?.message || error.message));
+    } finally {
+        // Re-enable buttons after analysis
+        startButton.disabled = false;
+        startButton.classList.remove("disabled");
+        uploadButton.disabled = false;
+        uploadButton.classList.remove("disabled");
+    }
+}
+
+// Display PCAP analysis results
+function displayAnalysisResults(predictions) {
+    if (!predictions || predictions.length === 0) {
+        alert("No packets were found in the PCAP file.");
+        return;
+    }
+
+    // Get the feature table body
+    const featureTableBody = document.getElementById("featureTableBody");
+
+    // Process each prediction
+    predictions.forEach(packet => {
+        // Format the flow duration to be more readable
+        const formattedDuration = parseFloat(packet.flow_duration).toFixed(2);
+
+        // Add feature row
+        const featureRow = document.createElement("tr");
+        const packetKey = `${packet.source}-${packet.destination}-${packet.destination_port}-${packet.flow_duration}`;
+        featureRow.setAttribute('data-packet-key', packetKey);
+        featureRow.innerHTML = `
+            <td>${formattedDuration}</td>
+            <td>${packet.source}</td>
+            <td>${packet.destination}</td>
+            <td>${packet.destination_port}</td>
+            <td>${packet.protocol || 'N/A'}</td>
+            <td>${packet.prediction}</td>
+            <td>
+                <button class="btn-details" onclick="toggleDetails(this)" data-details='${JSON.stringify(packet.features)}'>
+                    Show Details
+                </button>
+            </td>
+        `;
+
+        // Highlight rows for detected attacks
+        if (packet.prediction !== "Benign") {
+            featureRow.style.backgroundColor = "#fff0f0";
+            featureRow.style.fontWeight = "bold";
+        }
+
+        // Add row at the top of the table
+        featureTableBody.insertBefore(featureRow, featureTableBody.firstChild);
+
+        // Add alerts for detected attacks
+        if (packet.prediction !== "Benign") {
+            addAlertEntry(packet);
+            totalAttacks++;
+        }
+
+        totalPackets++;
+    });
+
+    // Update stats
+    document.getElementById("totalAttacks").textContent = totalAttacks;
+
+    // Alert the user about the analysis results
+    alert(`Analysis complete. Found ${totalPackets} packets with ${totalAttacks} potential threats.`);
 }
 
 // Fetch packets and update the UI
@@ -187,7 +304,6 @@ async function fetchPackets() {
             }
 
             // Update stats
-            document.getElementById("totalPackets").textContent = totalPackets;
             document.getElementById("totalAttacks").textContent = totalAttacks;
         }
     } catch (error) {
@@ -274,11 +390,26 @@ function filterFeatures() {
 
     // Loop through rows and hide those that do not match the search
     for (const row of rows) {
+        // Skip details rows (they should follow their parent visibility)
+        if (row.classList.contains('details-row')) continue;
+
         const rowText = row.textContent.toLowerCase();
         if (rowText.includes(searchValue)) {
             row.style.display = ""; // Show row if it matches the search
+
+            // Also show the details row if it exists
+            const nextRow = row.nextSibling;
+            if (nextRow && nextRow.classList && nextRow.classList.contains('details-row')) {
+                nextRow.style.display = "";
+            }
         } else {
             row.style.display = "none"; // Hide row if it doesn't match
+
+            // Also hide the details row if it exists
+            const nextRow = row.nextSibling;
+            if (nextRow && nextRow.classList && nextRow.classList.contains('details-row')) {
+                nextRow.style.display = "none";
+            }
         }
     }
 }
