@@ -7,9 +7,13 @@
 AI Powered Intrusion Detection and Prevention System
 
 Avinash Malempati, Manikanta Ganga, and Pavan Kalyan Butter
+
 Department of Cyber Security, Lewis University
+
 SP25-CPSC-59100-003 Cybersecurity Project
+
 Eric Spangler
+
 May 10,  2025
 
 
@@ -19,103 +23,198 @@ May 10,  2025
 
 
 Table of Contents
+
 1	Introduction	3
+
 2	Problem Statement	3
+
 3	Objective	4
+
 4	Literature Review	5
+
 5	System Overview	6
+
 6	Technologies Used	7
+
 7	System Architecture	8
+
 8	Data Collection	8
+
 9	Data Preprocessing and Cleaning	11
+
 10	Features Extraction	12
+
 11	Model Development	15
+
 11.1	Random Forest Classifier (RF)	15
+
 11.2	Neural Network (NN)	16
+
 12	Model Training and Evaluation	18
+
 13	Real-Time Packet Capture and Prediction	19
+
 14	Frontend and Dashboard	29
+
 15	Backend APIs	31
+
 15.1	/start_capture --- Starts packet capture.	31
+
 15.2	/stop_capture --- Stops capture safely.	31
+
 15.3	/get_packets --- Fetch real-time packets details and predictions	32
+
 15.4	/networks---Fetch available network interfaces.	33
+
 15.5	/analys_pcap --- analyses a uploaded pcap file	33
+
 16	Results and Analysis	36
+
 17	Challenges Faced	38
+
 18	Conclusion	40
+
 19	References	41
 
+
 1	Introduction
+
 In our increasingly connected digital landscape, cybersecurity threats are on the rise, rendering traditional Intrusion Detection Systems (IDS) inadequate against more advanced attacks. Signature-based approaches often struggle to identify unknown threats, which underscores the urgent need for smart, real-time detection systems.
+
 This project is all about creating an AI and Machine Learning-driven Intrusion Detection System (IDS) that can capture live network packets, extract important features, and accurately classify threats. With a web application powered by Flask, users can keep an eye on traffic, get real-time alerts, and dive into the captured data through an easy-to-use dashboard.
+
 The system uses a Random Forest model to make quick predictions and a Neural Network for more in-depth analysis, making it adaptable to new threats. By blending real-time monitoring with machine learning, this project offers a scalable, efficient, and proactive strategy for network security, setting the stage for future autonomous intrusion prevention systems.
+
 2	Problem Statement
+
 Traditional Intrusion Detection Systems (IDS) are really struggling to keep up with the fast-paced world of cyber threats today. Here are some of the key issues they face:
+
 •	Signature-based Detection: These traditional systems can only spot known attack patterns, which means they often overlook new and emerging threats.
+
 •	Reactive Approach: Most of these systems wait until after an attack has happened to respond, rather than taking steps to prevent them in the first place.
+
 •	Zero-day Vulnerability: Standard solutions are often powerless against new exploits that don’t fit any existing signatures.
+
 •	Static Nature: Traditional IDS just can’t adapt quickly enough to the ever-changing tactics of attackers.
+
 What we really need is a smart, adaptive, real-time detection system that can:
+
 •	Identify both known signatures and unusual patterns that might signal new threats
+
 •	Leverage machine learning to accurately classify network traffic
+
 •	Offer clear visualizations for quick threat awareness and response
+
 •	Evolve alongside new threats with minimal human oversight
-	Our proposed system tackles these challenges head-on by using cutting-edge machine learning and visualization techniques to bolster network security against the latest cyber threats.. 
+
+Our proposed system tackles these challenges head-on by using cutting-edge machine learning and visualization techniques to bolster network security against the latest cyber threats.. 
+ 
 3	Objective
+
 The main objectives of this smart intrusion detection system are to:
+
 •	Create a real-time IDS that uses AI and machine learning algorithms for spotting advanced threats.
+
 •	Set up a user-friendly web dashboard to visualize live network activity and security incidents.
+
 •	Identify a wide variety of cyber-attacks, including DoS, DDoS, port scans, web attacks, and brute force attempts.
+
 •	Establish a reliable storage solution for captured network data, allowing offline forensic analysis.
+
 •	Ensure a high detection rate while keeping false positives to a minimum by optimizing machine learning models.
+
 4	Literature Review
+
 a)	Traditional IDS:
+
 •	Commercial and open-source solutions, like Snort and Suricata, mainly depend on signature-based detection.
+
 •	While they do a good job against known threats, these systems struggle to catch new or altered attacks.
+
 •	They require regular signature updates, which can lead to extra work and potential detection gaps.
+
+
 b)	Machine Learning in IDS:
+
 •	With ML-based methods, systems can learn to differentiate between normal and malicious network traffic patterns.
+
 •	Recent research shows that algorithms such as Random Forests, Neural Networks, and Support Vector Machines can significantly outperform traditional rule-based systems.
+
 •	Some of the main benefits include their ability to adapt to new threats and lower false positive rates compared to signature-based detection.
+
 c)	Hybrid Models
+
 •	Research shows that blending ensemble methods like Random Forests and XGBoost with deep learning techniques results in the most effective detection capabilities.
+
 •	Hybrid models take advantage of the strengths of various algorithms to tackle different kinds of network threats.
+
 •	These combined strategies demonstrate better performance in both detection accuracy and processing efficiency, especially for real-time applications.
+
 	This project builds on these insights by creating a hybrid detection system that merges established machine learning techniques with real-time visualization features, resulting in a sophisticated and adaptive intrusion detection solution.
+ 
 5	System Overview
+
 	The architecture of an intelligent intrusion detection system is made up of four key components that work together seamlessly:
+ 
 a)	Frontend (UI): 
+
 	This is the interactive web dashboard that gives you a real-time look at network traffic, alerts for attacks, and in-depth packet analysis. It allows security analysts to keep an eye on threats and respond quickly, all through a user-friendly interface.
+ 
 b)	Backend (Flask Application): 
+
 	Think of this as the brain of the operation. It’s responsible for capturing network packets, extracting features, preprocessing data, and communicating with the machine learning models. It ensures that information flows smoothly between the network interfaces and the user interface.
+ 
 c)	Pre-trained AI/ML Models: 
+
 	This is where magic happens! An ensemble of machine learning algorithms, including Random Forest and Neural Network, works together to classify network traffic into different categories. These models analyze the features extracted to accurately identify various types of attacks.
+ 
 d)	Packet Buffer System: 
+
 	This component keeps holding captured network data for both real-time analysis and offline forensic investigations. It uses smart storage solutions to manage high volumes of traffic while allowing for detailed examinations later.
+ 
 6	Technologies Used
+
 Table 6.1: Used Technologies and their purpose
+
 Technology	Purpose
+
 Flask	Backend web server
+
 HTML, CSS, JS (Axios)	Frontend
+
 Scapy, PyShark	Packet sniffing
+
 Pandas, NumPy	Data preprocessing
+
 Scikit-Learn	Machine Learning (Random Forest)
+
 TensorFlow/Keras	Deep Learning (Neural Network)
+
 PCAP libraries	Saving packet captures
+
  
 7	System Architecture
+
  
 Figure 7.1: Architecture of the designed system
+
 8	Data Collection
+
 The process of collecting data is all about capturing network packets in real-time and doing it both efficiently and accurately. This crucial step is what makes sure that the intrusion detection system is reliable and effective. Here’s a closer look at the detailed methodology we used.
+
 a) Real-Time Packet Capture:
+
 The system utilizes PyShark or Scapy, which are Python-based tools for capturing live network packets effortlessly.
+
 b) Network Interface Selection:
+
 Users can easily choose their network interface (like eth0 for Ethernet or wlan0 for wireless) right from the web dashboard. This gives them the flexibility to monitor specific network segments effectively.
+
  
 Figure 8.1: Network selection for live packets analysis
+
 c) Packet Parsing:
+
 		When it comes to packet parsing, each packet we capture goes through a detailed 	breakdown, layer by layer. Here’s how it works:
 •	Ethernet Layer: This is where we grab the MAC addresses and identify the frame types.
 •	IP Layer: Here, we pull out the source and destination IP addresses, the protocols in use, and the Time-To-Live (TTL) values.
